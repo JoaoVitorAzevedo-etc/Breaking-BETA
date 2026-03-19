@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breaking Game - Aprenda Química Jogando</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Special Elite', system-ui, serif;
+        }
+
+        body {
+            background: radial-gradient(circle, #1a1a1a 0%, #050505 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #eee;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            max-width: 1000px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .game-title {
+            font-size: 3.5rem;
+            color: #ffff2c;
+            text-transform: uppercase;
+            letter-spacing: 15px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #ffff2c;
+            animation: flicker 4s infinite;
+        }
+
+        .game-subtitle {
+            font-size: 1.1rem;
+            color: #ccc;
+            margin-bottom: 40px;
+            letter-spacing: 3px;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .btn-option {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            transition: all 0.4s ease;
+            position: relative;
+            padding: 10px;
+        }
+
+        .btn-option:hover {
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        .btn-option::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            width: 0;
+            height: 1px;
+            background: #ffff2c;
+            transition: all 0.4s ease;
+            transform: translateX(-50%);
+        }
+
+        .btn-option:hover::after {
+            width: 80%;
+        }
+
+        input[type="text"] {
+            background: none;
+            border: 2px solid #666;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-family: 'Special Elite', serif;
+            text-align: center;
+            width: 300px;
+            max-width: 90%;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ffff2c;
+            box-shadow: 0 0 10px #ffff2c;
+        }
+
+        .info-text {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            letter-spacing: 1px;
+        }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid #006339;
+            color: #006339;
+            font-size: 0.9rem;
+            z-index: 30;
+            display: none;
+        }
+
+        .question-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffff2c;
+            padding: 40px;
+            z-index: 200;
+            max-width: 600px;
+            width: 90%;
+            display: none;
+        }
+
+        .question-box.active {
+            display: block;
+        }
+
+        .question-box h3 {
+            color: #ffff2c;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ffff2c;
+        }
+
+        .question-box p {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: none;
+            border: 1px solid #666;
+            color: #ccc;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            border-color: #ffff2c;
+            color: #ffff2c;
+        }
+
+        .option-btn.correct {
+            background: rgba(0, 255, 100, 0.2);
+            border-color: #00ff64;
+            color: #00ff64;
+        }
+
+        .option-btn.wrong {
+            background: rgba(255, 0, 100, 0.2);
+            border-color: #ff0064;
+            color: #ff0064;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: rgba(0, 255, 100, 0.2);
+            border: 2px solid #00ff64;
+            color: #00ff64;
+            display: block;
+        }
+
+        .feedback.wrong {
+            background: rgba(255, 0, 100, 0.2);
+            border: 2px solid #ff0064;
+            color: #ff0064;
+            display: block;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 150;
+        }
+
+        .modal-overlay.active {
+            display: block;
+        }
+
+        .stats-screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffff2c;
+            padding: 40px;
+            z-index: 250;
+            max-width: 600px;
+            width: 90%;
+            display: none;
+            text-align: center;
+        }
+
+        .stats-screen.active {
+            display: block;
+        }
+
+        .stats-screen h2 {
+            color: #ffff2c;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px #ffff2c;
+        }
+
+        .progress-info {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #666;
+            text-align: left;
+        }
+
+        .progress-level {
+            color: #ccc;
+            margin: 8px 0;
+        }
+
+        .progress-level.completed {
+            color: #ffff2c;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.4; }
+        }
+
+        .footer-note {
+            position: fixed;
+            bottom: 30px;
+            font-size: 0.8rem;
+            color: #333;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="container">
+        <h1 class="game-title">Breaking Game</h1>
+        <p class="game-subtitle">Aprenda Quimica Jogando</p>
+        
+        <div style="margin: 50px 0;">
+            <p class="info-text">Digite seu Nome de Usuário:</p>
+            <input type="text" id="username-input" placeholder="Seu nome aqui..." autofocus>
+            <p class="info-text">* Seu progresso será salvo automaticamente</p>
+        </div>
+
+        <div class="menu-options">
+            <button class="btn-option" onclick="app.entrarComUsuario()">▶ Entrar</button>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #666;">
+            <p class="info-text">⏱️ Usuários Anteriores:</p>
+            <div id="usuarios-anteriores"></div>
+        </div>
+    </div>
+
+    <!-- MENU PRINCIPAL -->
+    <div id="main-menu" class="container" style="display: none;">
+        <h1 class="game-title">Breaking Game</h1>
+        <p class="game-subtitle">Aprenda Quimica Jogando</p>
+        <p class="info-text">👤 Usuário: <span id="username-display" style="color: #ffff2c;">-</span></p>
+        <p class="info-text">💰 Pontos: <span id="total-points" style="color: #ffff2c;">0</span> | 🏆 Nível: <span id="max-level" style="color: #ffff2c;">1</span></p>
+        
+        <div class="progress-info" style="margin: 30px 0;">
+            <p style="color: #ffff2c; margin-bottom: 15px; font-weight: bold;">🎯 Progresso:</p>
+            <p class="progress-level" id="nivel-1-info">Nível 1: ⭕ Não jogado</p>
+            <p class="progress-level" id="nivel-2-info">Nível 2: ⭕ Não jogado</p>
+            <p class="progress-level" id="nivel-3-info">Nível 3: ⭕ Não jogado</p>
+        </div>
+        
+        <div class="menu-options">
+            <button class="btn-option" onclick="app.iniciarJogo()">▶ Jogar</button>
+            <button class="btn-option" onclick="app.mostrarUpgrades()">⭐ Upgrades</button>
+            <button class="btn-option" onclick="app.mostrarEstatisticas()">📊 Estatísticas</button>
+            <button class="btn-option" onclick="app.trocarUsuario()">👤 Trocar Usuário</button>
+            <button class="btn-option" onclick="app.sair()">Sair</button>
+        </div>
+    </div>
+
+    <!-- HUD DO JOGO -->
+    <div class="hud" id="game-hud">
+        <div>Nível: <span id="nivel-atual">1</span></div>
+        <div>Pontos: <span id="pontuacao-atual">0</span></div>
+        <div>Acertos: <span id="acertos-atual">0</span>/<span id="total-atual">5</span></div>
+    </div>
+
+    <!-- CAIXA DE PERGUNTA -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="question-box" id="question-box">
+        <h3 id="question-title">Pergunta</h3>
+        <p id="question-text">Qual é a resposta?</p>
+        <div class="options-list" id="options-list"></div>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <!-- TELA DE RESULTADO -->
+    <div class="modal-overlay" id="modal-resultado"></div>
+    <div class="stats-screen" id="stats-screen">
+        <h2>🏆 Nível Concluído!</h2>
+        <div class="progress-info">
+            <p>Pontos Ganhos: <span style="color: #ffff2c;" id="final-score">0</span></p>
+            <p>Taxa de Acerto: <span style="color: #ffff2c;" id="acerto-pct">0</span>%</p>
+            <p>Tempo: <span style="color: #ffff2c;" id="time-total">0</span>s</p>
+        </div>
+        <div class="menu-options" style="margin-top: 20px;">
+            <button class="btn-option" id="btn-proximo-nivel" onclick="app.proximoNivel()">→ Próximo Nível</button>
+            <button class="btn-option" onclick="app.voltarMenu()">← Voltar ao Menu</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE UPGRADES -->
+    <div class="modal-overlay" id="modal-upgrades" style="display: none;"></div>
+    <div class="stats-screen" id="upgrades-screen" style="display: none;">
+        <h2>⭐ Upgrades</h2>
+        <div class="progress-info" style="text-align: left;">
+            <p style="color: #ffff2c; margin-bottom: 15px;"><strong>🚀 Modo Timed (500 pts)</strong></p>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;">Responda perguntas contra o tempo</p>
+            <button class="btn-option" onclick="app.comprarUpgrade('timed')" style="font-size: 0.9rem;">Comprar</button>
+            
+            <p style="color: #ffff2c; margin: 20px 0 15px 0;"><strong>🎯 Modo Hardcore (1000 pts)</strong></p>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;">Uma chance só! Acertou, ganhou muito!</p>
+            <button class="btn-option" onclick="app.comprarUpgrade('hardcore')" style="font-size: 0.9rem;">Comprar</button>
+            
+            <p style="color: #ffff2c; margin: 20px 0 15px 0;"><strong>📚 Perguntas Extras (800 pts)</strong></p>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;">30 perguntas adicionais de química</p>
+            <button class="btn-option" onclick="app.comprarUpgrade('extras')" style="font-size: 0.9rem;">Comprar</button>
+            
+            <p style="color: #ffff2c; margin: 20px 0 15px 0;"><strong>🛡️ Protetor de Erros (300 pts)</strong></p>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 10px;">Use 3x por sessão. Erre sem penalidade</p>
+            <button class="btn-option" onclick="app.comprarUpgrade('shield')" style="font-size: 0.9rem;">Comprar</button>
+            
+            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #666;">
+                <p style="color: #ccc;">💰 Seus Pontos: <span style="color: #ffff2c; font-weight: bold;" id="upgrade-points">0</span></p>
+            </div>
+        </div>
+        <div class="menu-options" style="margin-top: 20px;">
+            <button class="btn-option" onclick="app.fecharUpgrades()">← Voltar</button>
+        </div>
+    </div>
+
+    <p class="footer-note">v.3.0.0- BETA - BGS Games</p>
+
+    <script>
+        // ============================================
+        // APLICAÇÃO BREAKING GAME
+        // ============================================
+
+        const app = {
+            // Dados
+            usuarioAtual: null,
+            STORAGE_PREFIX: 'breakinggame_',
+            gameState: {
+                nivelAtual: 1,
+                pontuacao: 0,
+                pontuacaoNivel: 0,
+                acertos: 0,
+                totalPerguntas: 0,
+                tempoInicio: 0
+            },
+            perguntasAtivas: [],
+            perguntaAtual: 0,
+            respostaSelecionada: false,
+
+            // Perguntas
+            questoes: {
+                nivel1: [
+                    {
+                        titulo: "Fórmula da Água",
+                        pergunta: "Qual é a fórmula molecular da água?",
+                        opcoes: ["H₂O", "CO₂", "O₂", "H₂O₂"],
+                        resposta: 0,
+                        explicacao: "A água é composta por 2 átomos de hidrogênio e 1 de oxigênio."
+                    },
+                    {
+                        titulo: "Dióxido de Carbono",
+                        pergunta: "Qual é a fórmula do dióxido de carbono?",
+                        opcoes: ["CO₂", "C₂O", "CO", "C₂O₂"],
+                        resposta: 0,
+                        explicacao: "O CO₂ é formado por 1 carbono e 2 oxigênios."
+                    },
+                    {
+                        titulo: "Sal de Cozinha",
+                        pergunta: "Qual é a fórmula do sal (cloreto de sódio)?",
+                        opcoes: ["NaCl", "NaC", "Na₂Cl", "NaCl₂"],
+                        resposta: 0,
+                        explicacao: "O sal é formado por 1 sódio e 1 cloro."
+                    },
+                    {
+                        titulo: "Estado da Matéria",
+                        pergunta: "Qual é o estado físico da água em 25°C?",
+                        opcoes: ["Sólido", "Líquido", "Gasoso", "Plasma"],
+                        resposta: 1,
+                        explicacao: "A água é líquida em temperatura ambiente."
+                    },
+                    {
+                        titulo: "Elemento Abundante",
+                        pergunta: "Qual é o elemento mais abundante do universo?",
+                        opcoes: ["Oxigênio", "Hidrogênio", "Carbono", "Nitrogênio"],
+                        resposta: 1,
+                        explicacao: "O hidrogênio é o elemento mais abundante."
+                    }
+                ],
+                nivel2: [
+                    {
+                        titulo: "Ligação Iônica",
+                        pergunta: "O que é uma ligação iônica?",
+                        opcoes: ["Transferência de elétrons", "Compartilhamento de elétrons", "Repulsão de elétrons", "Fusão"],
+                        resposta: 0,
+                        explicacao: "Ligação iônica ocorre quando há transferência de elétrons."
+                    },
+                    {
+                        titulo: "pH Neutro",
+                        pergunta: "Qual é o valor de pH para uma solução neutra?",
+                        opcoes: ["0", "7", "14", "10"],
+                        resposta: 1,
+                        explicacao: "pH 7 é considerado neutro em temperatura ambiente."
+                    },
+                    {
+                        titulo: "Reação Exotérmica",
+                        pergunta: "O que é uma reação exotérmica?",
+                        opcoes: ["Absorve calor", "Libera calor", "Sem mudança", "Consome oxigênio"],
+                        resposta: 1,
+                        explicacao: "Reações exotérmicas liberam energia em forma de calor."
+                    },
+                    {
+                        titulo: "Número Atômico",
+                        pergunta: "O número atômico representa:",
+                        opcoes: ["Nêutrons", "Elétrons", "Prótons", "Massa total"],
+                        resposta: 2,
+                        explicacao: "O número atômico é o número de prótons no núcleo."
+                    },
+                    {
+                        titulo: "Combustão do Metano",
+                        pergunta: "Qual é a equação da combustão do metano?",
+                        opcoes: ["CH₄ + O₂ → CO₂ + H₂O", "CH₄ + Cl₂ → CCl₄ + H₂", "CH₄ → C + H₂", "CH₄ + O₂ → CO + H₂O"],
+                        resposta: 0,
+                        explicacao: "A combustão do metano produz CO₂ e H₂O."
+                    }
+                ],
+                nivel3: [
+                    {
+                        titulo: "Configuração Eletrônica",
+                        pergunta: "Qual é a configuração eletrônica do oxigênio (Z=8)?",
+                        opcoes: ["1s² 2s² 2p²", "1s² 2s² 2p⁴", "1s² 2s¹ 2p⁵", "1s¹ 2s² 2p⁵"],
+                        resposta: 1,
+                        explicacao: "O oxigênio tem 8 elétrons: 2 na primeira camada e 6 na segunda."
+                    },
+                    {
+                        titulo: "Ácidos Fortes",
+                        pergunta: "Qual dos seguintes é um ácido FORTE?",
+                        opcoes: ["Ácido acético", "Ácido clorídrico", "Ácido carbônico", "Ácido bórico"],
+                        resposta: 1,
+                        explicacao: "HCl (ácido clorídrico) é um ácido forte que se ioniza completamente."
+                    },
+                    {
+                        titulo: "Equação Balanceada",
+                        pergunta: "Qual equação está CORRETAMENTE balanceada?",
+                        opcoes: ["2H₂ + O₂ → H₂O", "2H₂ + O₂ → 2H₂O", "H₂ + O₂ → H₂O", "H₂ + 2O₂ → H₂O"],
+                        resposta: 1,
+                        explicacao: "2H₂ + O₂ → 2H₂O está balanceada."
+                    },
+                    {
+                        titulo: "Ligação Covalente",
+                        pergunta: "A ligação C-O é considerada:",
+                        opcoes: ["Covalente apolar", "Covalente polar", "Iônica", "Metálica"],
+                        resposta: 1,
+                        explicacao: "C-O é covalente polar por causa da diferença de eletronegatividade."
+                    },
+                    {
+                        titulo: "Número de Avogadro",
+                        pergunta: "Qual é o número de Avogadro?",
+                        opcoes: ["3,14 × 10²³", "6,02 × 10²³", "2,71 × 10²³", "1,38 × 10²³"],
+                        resposta: 1,
+                        explicacao: "O número de Avogadro é 6,02 × 10²³ moléculas/mol."
+                    }
+                ]
+            },
+
+            // Funções iniciais
+            inicializar() {
+                // Criar usuário padrão "Joao" se não existir
+                this.criarUsuarioPadrao();
+                this.carregarUsuariosAnteriores();
+            },
+
+            criarUsuarioPadrao() {
+                const nomeUsuario = 'Joao';
+                const usuariosKey = this.STORAGE_PREFIX + 'usuarios_lista';
+                const usuarioKey = this.STORAGE_PREFIX + nomeUsuario;
+                const nivelKey = this.STORAGE_PREFIX + nomeUsuario + '_nivel_1';
+
+                // Adicionar à lista se não existir
+                let usuarios = JSON.parse(localStorage.getItem(usuariosKey)) || [];
+                if (!usuarios.includes(nomeUsuario)) {
+                    usuarios.push(nomeUsuario);
+                    localStorage.setItem(usuariosKey, JSON.stringify(usuarios));
+                }
+
+                // Criar perfil do Joao se não existir
+                if (!localStorage.getItem(usuarioKey)) {
+                    const perfilJoao = {
+                        nome: nomeUsuario,
+                        pontuacaoTotal: 500,
+                        nivelMaximo: 2,
+                        acertos: 25,
+                        erros: 5,
+                        sessoes: [],
+                        dataCriacao: new Date().toLocaleString('pt-BR'),
+                        upgrades: {
+                            timed: false,
+                            hardcore: false,
+                            extras: false,
+                            shield: false
+                        },
+                        shieldsRestantes: 0
+                    };
+                    localStorage.setItem(usuarioKey, JSON.stringify(perfilJoao));
+                }
+
+                // Criar dados do Nível 1 se não existir
+                if (!localStorage.getItem(nivelKey)) {
+                    const nivelUmData = {
+                        nivel: 1,
+                        pontos: 500,
+                        acertos: 5,
+                        total: 5,
+                        taxa: 100,
+                        tempo: 120
+                    };
+                    localStorage.setItem(nivelKey, JSON.stringify(nivelUmData));
+                }
+            },
+
+            carregarUsuariosAnteriores() {
+                const usuarios = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + 'usuarios_lista')) || [];
+                const container = document.getElementById('usuarios-anteriores');
+                container.innerHTML = '';
+
+                if (usuarios.length === 0) {
+                    container.innerHTML = '<p class="info-text">Nenhum usuário anterior</p>';
+                    return;
+                }
+
+                usuarios.forEach(usuario => {
+                    const dados = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + usuario)) || {};
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option';
+                    btn.style.fontSize = '0.9rem';
+                    btn.style.marginBottom = '5px';
+                    btn.innerHTML = `👤 ${usuario} (${dados.pontuacaoTotal || 0} pts)`;
+                    btn.onclick = () => {
+                        document.getElementById('username-input').value = usuario;
+                        app.entrarComUsuario();
+                    };
+                    container.appendChild(btn);
+                });
+            },
+
+            entrarComUsuario() {
+                const username = document.getElementById('username-input').value.trim();
+                if (!username) {
+                    alert('Digite seu nome!');
+                    return;
+                }
+
+                this.usuarioAtual = username;
+                localStorage.setItem(this.STORAGE_PREFIX + 'usuario_atual', username);
+
+                const usuarios = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + 'usuarios_lista')) || [];
+                if (!usuarios.includes(username)) {
+                    usuarios.push(username);
+                    localStorage.setItem(this.STORAGE_PREFIX + 'usuarios_lista', JSON.stringify(usuarios));
+                }
+
+                if (!localStorage.getItem(this.STORAGE_PREFIX + username)) {
+                    const perfilPadrao = {
+                        nome: username,
+                        pontuacaoTotal: 0,
+                        nivelMaximo: 1,
+                        acertos: 0,
+                        erros: 0,
+                        sessoes: [],
+                        dataCriacao: new Date().toLocaleString('pt-BR')
+                    };
+                    localStorage.setItem(this.STORAGE_PREFIX + username, JSON.stringify(perfilPadrao));
+                }
+
+                this.carregarMenuPrincipal();
+            },
+
+            carregarMenuPrincipal() {
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                document.getElementById('username-display').textContent = this.usuarioAtual;
+                document.getElementById('total-points').textContent = perfil.pontuacaoTotal || 0;
+                document.getElementById('max-level').textContent = perfil.nivelMaximo || 1;
+
+                for (let i = 1; i <= 3; i++) {
+                    const nivelKey = this.STORAGE_PREFIX + this.usuarioAtual + '_nivel_' + i;
+                    const nivelData = localStorage.getItem(nivelKey);
+                    const elemento = document.getElementById(`nivel-${i}-info`);
+                    
+                    if (elemento) {
+                        if (nivelData) {
+                            const dados = JSON.parse(nivelData);
+                            elemento.innerHTML = `Nível ${i}: ✓ ${dados.pontos} pts | ${dados.taxa}%`;
+                            elemento.classList.add('completed');
+                        }
+                    }
+                }
+
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-menu').style.display = 'block';
+            },
+
+            iniciarJogo() {
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                const nivelInicial = perfil.nivelMaximo || 1;
+                
+                // Se terminou nível 3, volta para nível 1
+                const nivelParaJogar = nivelInicial >= 3 ? 1 : nivelInicial;
+                
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('game-hud').style.display = 'block';
+                
+                this.gameState.nivelAtual = nivelParaJogar;
+                this.gameState.pontuacao = perfil.pontuacaoTotal || 0;
+                this.gameState.acertos = 0;
+                this.gameState.tempoInicio = Date.now();
+                
+                this.carregarNivel(nivelParaJogar);
+            },
+
+            carregarNivel(nivel) {
+                this.gameState.nivelAtual = nivel;
+                this.perguntasAtivas = [...this.questoes[`nivel${nivel}`]];
+                this.perguntaAtual = 0;
+                this.gameState.totalPerguntas = this.perguntasAtivas.length;
+                this.gameState.acertos = 0;
+                this.gameState.pontuacaoNivel = 0;
+                
+                document.getElementById('nivel-atual').textContent = nivel;
+                document.getElementById('total-atual').textContent = this.perguntasAtivas.length;
+                document.getElementById('acertos-atual').textContent = '0';
+                document.getElementById('pontuacao-atual').textContent = this.gameState.pontuacao;
+                
+                this.mostrarProximaPergunta();
+            },
+
+            mostrarProximaPergunta() {
+                if (this.perguntaAtual >= this.perguntasAtivas.length) {
+                    this.finalizarNivel();
+                    return;
+                }
+
+                const pergunta = this.perguntasAtivas[this.perguntaAtual];
+                this.respostaSelecionada = false;
+
+                document.getElementById('question-title').textContent = pergunta.titulo;
+                document.getElementById('question-text').textContent = pergunta.pergunta;
+                document.getElementById('feedback').className = 'feedback';
+
+                const optionsHTML = pergunta.opcoes.map((opcao, index) => `
+                    <button class="option-btn" onclick="app.responderPergunta(${index})">
+                        ${String.fromCharCode(65 + index)}) ${opcao}
+                    </button>
+                `).join('');
+
+                document.getElementById('options-list').innerHTML = optionsHTML;
+                document.getElementById('question-box').classList.add('active');
+                document.getElementById('modal-overlay').classList.add('active');
+            },
+
+            responderPergunta(index) {
+                if (this.respostaSelecionada) return;
+                
+                this.respostaSelecionada = true;
+                const pergunta = this.perguntasAtivas[this.perguntaAtual];
+                const eCorreto = index === pergunta.resposta;
+
+                const botoes = document.querySelectorAll('.option-btn');
+                botoes.forEach((btn, i) => {
+                    if (i === pergunta.resposta) {
+                        btn.classList.add('correct');
+                    }
+                    if (i === index && !eCorreto) {
+                        btn.classList.add('wrong');
+                    }
+                    btn.disabled = true;
+                });
+
+                if (eCorreto) {
+                    this.gameState.acertos++;
+                    this.gameState.pontuacao += 100;
+                    this.gameState.pontuacaoNivel = (this.gameState.pontuacaoNivel || 0) + 100;
+                    document.getElementById('feedback').className = 'feedback correct';
+                    document.getElementById('feedback').textContent = `✓ Correto! ${pergunta.explicacao}`;
+                } else {
+                    this.gameState.pontuacao = Math.max(0, this.gameState.pontuacao - 25);
+                    this.gameState.pontuacaoNivel = Math.max(0, (this.gameState.pontuacaoNivel || 0) - 25);
+                    document.getElementById('feedback').className = 'feedback wrong';
+                    document.getElementById('feedback').textContent = `✗ Incorreto. ${pergunta.explicacao}`;
+                }
+
+                document.getElementById('pontuacao-atual').textContent = this.gameState.pontuacao;
+                document.getElementById('acertos-atual').textContent = this.gameState.acertos;
+
+                setTimeout(() => {
+                    this.perguntaAtual++;
+                    document.getElementById('question-box').classList.remove('active');
+                    document.getElementById('modal-overlay').classList.remove('active');
+                    this.mostrarProximaPergunta();
+                }, 3000);
+            },
+
+            finalizarNivel() {
+                const tempoTotal = Math.floor((Date.now() - this.gameState.tempoInicio) / 1000);
+                
+                const dadosNivel = {
+                    nivel: this.gameState.nivelAtual,
+                    pontos: this.gameState.pontuacaoNivel || 0,
+                    acertos: this.gameState.acertos,
+                    total: this.gameState.totalPerguntas,
+                    taxa: Math.round((this.gameState.acertos / this.gameState.totalPerguntas) * 100),
+                    tempo: tempoTotal
+                };
+
+                localStorage.setItem(
+                    this.STORAGE_PREFIX + this.usuarioAtual + '_nivel_' + this.gameState.nivelAtual,
+                    JSON.stringify(dadosNivel)
+                );
+
+                this.salvarProgresso();
+
+                document.getElementById('final-score').textContent = this.gameState.pontuacaoNivel || 0;
+                document.getElementById('acerto-pct').textContent = Math.round((this.gameState.acertos / this.gameState.totalPerguntas) * 100);
+                document.getElementById('time-total').textContent = tempoTotal;
+
+                document.getElementById('question-box').classList.remove('active');
+                document.getElementById('modal-overlay').classList.remove('active');
+                document.getElementById('stats-screen').classList.add('active');
+                document.getElementById('modal-resultado').classList.add('active');
+
+                if (this.gameState.nivelAtual >= 3) {
+                    document.getElementById('btn-proximo-nivel').style.display = 'none';
+                } else {
+                    document.getElementById('btn-proximo-nivel').style.display = 'block';
+                }
+            },
+
+            proximoNivel() {
+                document.getElementById('stats-screen').classList.remove('active');
+                document.getElementById('modal-resultado').classList.remove('active');
+                this.carregarNivel(this.gameState.nivelAtual + 1);
+            },
+
+            salvarProgresso() {
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                perfil.pontuacaoTotal = this.gameState.pontuacao;
+                perfil.nivelMaximo = Math.max(perfil.nivelMaximo || 1, this.gameState.nivelAtual);
+                perfil.acertos = (perfil.acertos || 0) + this.gameState.acertos;
+                perfil.erros = (perfil.erros || 0) + (this.gameState.totalPerguntas - this.gameState.acertos);
+                localStorage.setItem(this.STORAGE_PREFIX + this.usuarioAtual, JSON.stringify(perfil));
+            },
+
+            mostrarEstatisticas() {
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                
+                let stats = `📊 ESTATÍSTICAS DE ${this.usuarioAtual.toUpperCase()}\n\n`;
+                stats += `Pontuação: ${perfil.pontuacaoTotal || 0} pts\n`;
+                stats += `Nível Máximo: ${perfil.nivelMaximo || 1}\n`;
+                stats += `Acertos: ${perfil.acertos || 0}\n`;
+                stats += `Erros: ${perfil.erros || 0}\n`;
+                stats += `Taxa: ${Math.round((perfil.acertos / (perfil.acertos + perfil.erros)) * 100) || 0}%\n\n`;
+
+                for (let i = 1; i <= 3; i++) {
+                    const nivelKey = this.STORAGE_PREFIX + this.usuarioAtual + '_nivel_' + i;
+                    const nivelData = localStorage.getItem(nivelKey);
+                    
+                    if (nivelData) {
+                        const dados = JSON.parse(nivelData);
+                        stats += `Nível ${i}: ${dados.pontos} pts | ${dados.taxa}% | ${dados.tempo}s\n`;
+                    } else {
+                        stats += `Nível ${i}: Não jogado\n`;
+                    }
+                }
+
+                alert(stats);
+            },
+
+            trocarUsuario() {
+                this.usuarioAtual = null;
+                localStorage.removeItem(this.STORAGE_PREFIX + 'usuario_atual');
+                document.getElementById('main-menu').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('username-input').value = '';
+                document.getElementById('username-input').focus();
+                this.carregarUsuariosAnteriores();
+            },
+
+            voltarMenu() {
+                this.salvarProgresso();
+                document.getElementById('game-hud').style.display = 'none';
+                document.getElementById('stats-screen').classList.remove('active');
+                document.getElementById('modal-resultado').classList.remove('active');
+                document.getElementById('main-menu').style.display = 'block';
+                this.carregarMenuPrincipal();
+            },
+
+            sair() {
+                const confirmacao = confirm("Deseja encerrar o jogo?");
+                if (confirmacao) {
+                    window.close();
+                }
+            },
+
+            mostrarUpgrades() {
+                if (!this.usuarioAtual) return;
+
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                document.getElementById('upgrade-points').textContent = perfil.pontuacaoTotal || 0;
+
+                document.getElementById('upgrades-screen').style.display = 'block';
+                document.getElementById('modal-upgrades').style.display = 'block';
+            },
+
+            fecharUpgrades() {
+                document.getElementById('upgrades-screen').style.display = 'none';
+                document.getElementById('modal-upgrades').style.display = 'none';
+            },
+
+            comprarUpgrade(tipo) {
+                if (!this.usuarioAtual) return;
+
+                const perfil = JSON.parse(localStorage.getItem(this.STORAGE_PREFIX + this.usuarioAtual)) || {};
+                const precos = {
+                    timed: 500,
+                    hardcore: 1000,
+                    extras: 800,
+                    shield: 300
+                };
+
+                const preco = precos[tipo];
+                if ((perfil.pontuacaoTotal || 0) < preco) {
+                    alert(`❌ Você precisa de ${preco} pontos!\nVocê tem: ${perfil.pontuacaoTotal || 0} pontos`);
+                    return;
+                }
+
+                if (perfil.upgrades && perfil.upgrades[tipo]) {
+                    alert(`✓ Você já desbloqueou este upgrade!`);
+                    return;
+                }
+
+                perfil.upgrades = perfil.upgrades || {};
+                perfil.upgrades[tipo] = true;
+                perfil.pontuacaoTotal -= preco;
+
+                if (tipo === 'shield') {
+                    perfil.shieldsRestantes = (perfil.shieldsRestantes || 0) + 3;
+                }
+
+                localStorage.setItem(this.STORAGE_PREFIX + this.usuarioAtual, JSON.stringify(perfil));
+                alert(`✓ Upgrade ${tipo.toUpperCase()} desbloqueado!\n-${preco} pontos\nSeus novos pontos: ${perfil.pontuacaoTotal}`);
+                
+                document.getElementById('upgrade-points').textContent = perfil.pontuacaoTotal;
+                this.carregarMenuPrincipal();
+            }
+        };
+
+        // Inicializar ao carregar
+        app.inicializar();
+    </script>
+
+</body>
+</html>
